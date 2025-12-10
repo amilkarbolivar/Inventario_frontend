@@ -5,16 +5,16 @@ class ApiEndpoints {
   static const String login = '/auth/login';
   
   // Productos
-  static const String productos = '/productos';
-  static String productoById(int id) => '/productos/$id';
+  static const String productos = '/producto';
+  static String productoById(int id) => '/producto/$id';
   static String productosActivos(int supermercadoId) => 
-      '/productos/supermercado/$supermercadoId/activos';
+      '/producto/supermercado/$supermercadoId/activos';
   
   // Categorías
-  static const String categorias = '/categorias';
-  static String categoriaById(int id) => '/categorias/$id';
+  static const String categorias = '/categoria';
+  static String categoriaById(int id) => '/categoria/$id';
   static String categoriasBySupermercado(int supermercadoId) => 
-      '/categorias/supermercado/$supermercadoId';
+      '/categoria/supermercado/$supermercadoId';
   
   // Proveedores
   static const String proveedores = '/proveedor';

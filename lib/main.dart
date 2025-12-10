@@ -6,6 +6,8 @@ import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/producto_provider.dart';
 import 'presentation/providers/categoria_provider.dart';
 import 'presentation/providers/venta_provider.dart';
+import 'presentation/providers/proveedor_provider.dart';
+import 'presentation/providers/compra_provider.dart';
 import 'presentation/providers/navigation_provider.dart';
 import 'routes/app_router.dart';
 
@@ -24,6 +26,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProductoProvider()),
         ChangeNotifierProvider(create: (_) => CategoriaProvider()),
         ChangeNotifierProvider(create: (_) => VentaProvider()),
+        ChangeNotifierProvider(create: (_) => ProveedorProvider()),
+        ChangeNotifierProvider(create: (_) => CompraProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ],
       child: MaterialApp(

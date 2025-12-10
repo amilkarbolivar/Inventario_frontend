@@ -3,10 +3,35 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/models/producto_model.dart';
 
+Widget _buildChip(String label, Color color) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        color: color,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+}
+
 class ProductoCard extends StatelessWidget {
   final ProductoModel producto;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const ProductoCard({Key? key, required this.producto}) : super(key: key);
+  const ProductoCard({
+    Key? key,
+    required this.producto,
+    this.onEdit,
+    this.onDelete,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +79,16 @@ class ProductoCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit, color: AppColors.primary),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: AppColors.error),
-                  onPressed: () {},
-                ),
+                if (onEdit != null)
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: AppColors.primary),
+                    onPressed: onEdit,
+                  ),
+                if (onDelete != null)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: AppColors.error),
+                    onPressed: onDelete,
+                  ),
               ],
             ),
             const SizedBox(height: 12),
