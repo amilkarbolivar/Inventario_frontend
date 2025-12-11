@@ -4,7 +4,7 @@ import '../../../core/constants/app_strings.dart';
 import '../../providers/navigation_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../productos/productos_screen.dart';
-import '../ventas/ventas_screen.dart';
+import '../ventas/ventas_screen.dart'; // ← Asegúrate de que esta línea esté aquí
 import '../more/more_screen.dart';
 
 class MainScreen extends StatelessWidget {
@@ -17,7 +17,7 @@ class MainScreen extends StatelessWidget {
     final screens = [
       const DashboardScreen(),
       const ProductosScreen(),
-      const VentasScreen(),
+      const VentasScreen(), // ← Usando VentasScreen correctamente
       const MoreScreen(),
     ];
 

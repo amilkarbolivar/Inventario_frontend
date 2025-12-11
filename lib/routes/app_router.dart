@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/presentation/screens/ventas/ventas_screen.dart';
 import '../core/constants/app_routes.dart';
 import '../presentation/screens/auth/splash_screen.dart';
 import '../presentation/screens/auth/login_screen.dart';
@@ -9,6 +10,7 @@ import '../presentation/screens/categorias/categorias_screen.dart';
 import '../presentation/screens/proveedores/proveedores_screen.dart';
 import '../presentation/screens/proveedores/proveedor_form_screen.dart';
 import '../presentation/screens/ventas/nueva_venta_screen.dart';
+import '../presentation/screens/ventas/ventas_screen.dart';
 import '../presentation/screens/compras/compras_screen.dart';
 import '../presentation/screens/clientes/clientes_screen.dart';
 
@@ -49,6 +51,9 @@ class AppRouter {
       
       case AppRoutes.clientes:
         return MaterialPageRoute(builder: (_) => const ClientesScreen());
+      
+      case AppRoutes.ventas:
+        return MaterialPageRoute(builder: (_) => const VentasScreen());
       
       default:
         return MaterialPageRoute(
