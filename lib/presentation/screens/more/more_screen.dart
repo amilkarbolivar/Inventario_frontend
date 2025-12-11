@@ -16,6 +16,23 @@ class MoreScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const Text(
+            'Gestión',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildMenuCard(
+            context,
+            'Compras',
+            'Gestionar compras a proveedores',
+            Icons.shopping_bag,
+            AppColors.primary,
+            () => Navigator.pushNamed(context, AppRoutes.compras),
+          ),
           _buildMenuCard(
             context,
             'Categorías',
@@ -32,7 +49,24 @@ class MoreScreen extends StatelessWidget {
             AppColors.orange,
             () => Navigator.pushNamed(context, AppRoutes.proveedores),
           ),
+          _buildMenuCard(
+            context,
+            'Clientes',
+            'Gestionar clientes',
+            Icons.people,
+            AppColors.teal,
+            () => Navigator.pushNamed(context, AppRoutes.clientes),
+          ),
           const SizedBox(height: 24),
+          const Text(
+            'Cuenta',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
           _buildMenuCard(
             context,
             'Cerrar Sesión',
@@ -40,8 +74,29 @@ class MoreScreen extends StatelessWidget {
             Icons.logout,
             AppColors.error,
             () {
-              context.read<AuthProvider>().logout();
-              Navigator.pushReplacementNamed(context, AppRoutes.login);
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Cerrar Sesión'),
+                  content: const Text('¿Estás seguro de que deseas cerrar sesión?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancelar'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        context.read<AuthProvider>().logout();
+                        Navigator.pushReplacementNamed(context, AppRoutes.login);
+                      },
+                      child: const Text(
+                        'Cerrar Sesión',
+                        style: TextStyle(color: AppColors.error),
+                      ),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ],

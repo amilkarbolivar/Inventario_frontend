@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/presentation/screens/ventas/ventas_screen.dart';
 import '../core/constants/app_routes.dart';
 import '../presentation/screens/auth/splash_screen.dart';
 import '../presentation/screens/auth/login_screen.dart';

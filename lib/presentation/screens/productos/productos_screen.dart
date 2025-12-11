@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_routes.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../data/models/producto_model.dart';
 import '../../providers/producto_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../productos/producto_form_screen.dart';
 
 class ProductosScreen extends StatefulWidget {
   const ProductosScreen({Key? key}) : super(key: key);
 
   @override
-  State<ProductosScreen> createState() => _ProductosScreenCompleteState();
+  State<ProductosScreen> createState() => _ProductosScreenState();
 }
 
-class _ProductosScreenCompleteState extends State<ProductosScreen> {
+class _ProductosScreenState extends State<ProductosScreen> {
   String _searchQuery = '';
+  bool _showInactive = false;
   
   @override
   void initState() {
@@ -38,6 +42,13 @@ class _ProductosScreenCompleteState extends State<ProductosScreen> {
         title: const Text('Productos'),
         actions: [
           IconButton(
+            icon: Icon(_showInactive ? Icons.visibility : Icons.visibility_off),
+            onPressed: () {
+              setState(() => _showInactive = !_showInactive);
+            },
+            tooltip: _showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadData,
           ),
@@ -46,8 +57,9 @@ class _ProductosScreenCompleteState extends State<ProductosScreen> {
       body: Column(
         children: [
           // Barra de búsqueda
-          Padding(
+          Container(
             padding: const EdgeInsets.all(16),
+            color: Colors.white,
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Buscar productos...',
@@ -89,7 +101,10 @@ class _ProductosScreenCompleteState extends State<ProductosScreen> {
                 }
 
                 final productos = productoProvider.productos
-                    .where((p) => p.nombre.toLowerCase().contains(_searchQuery))
+                    .where((p) => 
+                      p.nombre.toLowerCase().contains(_searchQuery) &&
+                      (_showInactive || p.activo)
+                    )
                     .toList();
 
                 if (productos.isEmpty) {
@@ -122,7 +137,7 @@ class _ProductosScreenCompleteState extends State<ProductosScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: producto.activo ? Colors.white : Colors.grey[200],
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -143,12 +158,43 @@ class _ProductosScreenCompleteState extends State<ProductosScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          producto.nombre,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                producto.nombre,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                  color: producto.activo 
+                                                      ? AppColors.textPrimary 
+                                                      : AppColors.textSecondary,
+                                                  decoration: producto.activo 
+                                                      ? null 
+                                                      : TextDecoration.lineThrough,
+                                                ),
+                                              ),
+                                            ),
+                                            if (!producto.activo)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.error.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: const Text(
+                                                  'INACTIVO',
+                                                  style: TextStyle(
+                                                    color: AppColors.error,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -161,15 +207,61 @@ class _ProductosScreenCompleteState extends State<ProductosScreen> {
                                       ],
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: AppColors.primary),
-                                    onPressed: () {
-                                      // TODO: Navegar a editar producto
+                                  PopupMenuButton<String>(
+                                    onSelected: (value) {
+                                      switch (value) {
+                                        case 'edit':
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ProductoFormScreen(producto: producto),
+                                            ),
+                                          ).then((_) => _loadData());
+                                          break;
+                                        case 'toggle':
+                                          _toggleProducto(producto.id!);
+                                          break;
+                                        case 'delete':
+                                          _confirmDelete(producto.id!);
+                                          break;
+                                      }
                                     },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: AppColors.error),
-                                    onPressed: () => _confirmDelete(producto.id!),
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit, size: 20, color: AppColors.primary),
+                                            SizedBox(width: 8),
+                                            Text('Editar'),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'toggle',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              producto.activo ? Icons.toggle_on : Icons.toggle_off,
+                                              size: 20,
+                                              color: producto.activo ? AppColors.success : AppColors.warning,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(producto.activo ? 'Desactivar' : 'Activar'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete, size: 20, color: AppColors.error),
+                                            SizedBox(width: 8),
+                                            Text('Eliminar'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -287,7 +379,12 @@ class _ProductosScreenCompleteState extends State<ProductosScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Navegar a formulario de nuevo producto
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ProductoFormScreen(),
+            ),
+          ).then((_) => _loadData());
         },
         icon: const Icon(Icons.add),
         label: const Text('Nuevo Producto'),
@@ -314,12 +411,55 @@ class _ProductosScreenCompleteState extends State<ProductosScreen> {
     );
   }
 
+  Future<void> _toggleProducto(int id) async {
+    final producto = context.read<ProductoProvider>().productos.firstWhere((p) => p.id == id);
+    
+    // Crear producto actualizado con estado invertido
+    final updatedProducto = ProductoModel(
+      id: producto.id,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      stock: producto.stock,
+      codigoBarra: producto.codigoBarra,
+      activo: !producto.activo,
+      categoriaId: producto.categoriaId,
+      marcaId: producto.marcaId,
+      medidaId: producto.medidaId,
+      provedorId: producto.provedorId,
+      supermercadoId: producto.supermercadoId,
+    );
+    
+    final success = await context.read<ProductoProvider>().updateProducto(id, updatedProducto);
+    
+    if (!mounted) return;
+    
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            updatedProducto.activo 
+                ? 'Producto activado' 
+                : 'Producto desactivado',
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error al cambiar estado del producto'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   void _confirmDelete(int id) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Producto'),
-        content: const Text('¿Estás seguro de que deseas eliminar este producto?'),
+        content: const Text('¿Estás seguro de que deseas eliminar este producto permanentemente?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
