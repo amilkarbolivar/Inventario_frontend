@@ -9,6 +9,8 @@ import 'presentation/providers/venta_provider.dart';
 import 'presentation/providers/proveedor_provider.dart';
 import 'presentation/providers/compra_provider.dart';
 import 'presentation/providers/navigation_provider.dart';
+import 'presentation/providers/marca_provider.dart';
+import 'presentation/providers/medida_provider.dart';
 import 'routes/app_router.dart';
 
 void main() {
@@ -29,6 +31,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProveedorProvider()),
         ChangeNotifierProvider(create: (_) => CompraProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => MarcaProvider()),
+        ChangeNotifierProvider(create: (_) => MedidaProvider()),
       ],
       child: MaterialApp(
         title: 'Sistema de Inventario',

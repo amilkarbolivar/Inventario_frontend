@@ -1,11 +1,16 @@
-import 'package:flutter/material.dart';
+
+   import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/models/producto_model.dart';
+import '../../../data/models/marca_model.dart';
+import '../../../data/models/medida_model.dart';
 import '../../providers/producto_provider.dart';
 import '../../providers/categoria_provider.dart';
 import '../../providers/proveedor_provider.dart';
+import '../../providers/marca_provider.dart';
+import '../../providers/medida_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/custom_dropdown.dart';
@@ -28,8 +33,8 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
   final _codigoBarraController = TextEditingController();
   
   int? _categoriaId;
-  int? _marcaId = 1;
-  int? _medidaId = 1;
+  int? _marcaId;
+  int? _medidaId;
   int? _provedorId;
   bool _isLoading = false;
 
@@ -53,6 +58,8 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
       if (supermercadoId != null) {
         context.read<CategoriaProvider>().fetchCategorias(supermercadoId);
         context.read<ProveedorProvider>().fetchProveedores(supermercadoId);
+        context.read<MarcaProvider>().fetchMarcas(supermercadoId);
+        context.read<MedidaProvider>().fetchMedidas(supermercadoId);
       }
     });
   }
@@ -64,6 +71,120 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
     _stockController.dispose();
     _codigoBarraController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showCreateMarcaDialog() async {
+    final nombreController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nueva Marca'),
+        content: Form(
+          key: formKey,
+          child: CustomTextField(
+            controller: nombreController,
+            label: 'Nombre de la Marca',
+            prefixIcon: Icons.label,
+            validator: (value) => Validators.required(value, fieldName: 'Nombre'),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final authProvider = context.read<AuthProvider>();
+                final supermercadoId = authProvider.authResponse?.administrador.supermercadoId;
+                
+                if (supermercadoId != null) {
+                  final marca = MarcaModel(
+                    nombre: nombreController.text.trim(),
+                    supermercadoId: supermercadoId,
+                  );
+                  
+                  final success = await context.read<MarcaProvider>().createMarca(marca);
+                  if (success && mounted) {
+                    Navigator.pop(context, true);
+                  }
+                }
+              }
+            },
+            child: const Text('Crear'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Marca creada exitosamente'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showCreateMedidaDialog() async {
+    final unidadController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nueva Medida'),
+        content: Form(
+          key: formKey,
+          child: CustomTextField(
+            controller: unidadController,
+            label: 'Unidad de Medida (ej: kg, und, litro)',
+            prefixIcon: Icons.straighten,
+            validator: (value) => Validators.required(value, fieldName: 'Unidad'),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final authProvider = context.read<AuthProvider>();
+                final supermercadoId = authProvider.authResponse?.administrador.supermercadoId;
+                
+                if (supermercadoId != null) {
+                  final medida = MedidaModel(
+                    unidad: unidadController.text.trim(),
+                    supermercadoId: supermercadoId,
+                  );
+                  
+                  final success = await context.read<MedidaProvider>().createMedida(medida);
+                  if (success && mounted) {
+                    Navigator.pop(context, true);
+                  }
+                }
+              }
+            },
+            child: const Text('Crear'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Medida creada exitosamente'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
   }
 
   Future<void> _handleSubmit() async {
@@ -182,6 +303,76 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
                     }).toList(),
                     onChanged: (value) => setState(() => _categoriaId = value),
                     validator: (value) => value == null ? 'Selecciona una categoría' : null,
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Consumer<MarcaProvider>(
+                builder: (context, marcaProvider, _) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: CustomDropdown<int>(
+                          label: 'Marca',
+                          value: _marcaId,
+                          items: marcaProvider.marcas.map((marca) {
+                            return DropdownMenuItem(
+                              value: marca.id,
+                              child: Text(marca.nombre),
+                            );
+                          }).toList(),
+                          onChanged: (value) => setState(() => _marcaId = value),
+                          validator: (value) => value == null ? 'Selecciona una marca' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          onPressed: _showCreateMarcaDialog,
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          tooltip: 'Nueva Marca',
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Consumer<MedidaProvider>(
+                builder: (context, medidaProvider, _) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: CustomDropdown<int>(
+                          label: 'Unidad de Medida',
+                          value: _medidaId,
+                          items: medidaProvider.medidas.map((medida) {
+                            return DropdownMenuItem(
+                              value: medida.id,
+                              child: Text(medida.unidad),
+                            );
+                          }).toList(),
+                          onChanged: (value) => setState(() => _medidaId = value),
+                          validator: (value) => value == null ? 'Selecciona una medida' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          onPressed: _showCreateMedidaDialog,
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          tooltip: 'Nueva Medida',
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
