@@ -1,72 +1,60 @@
 import 'package:flutter/material.dart';
-import '../../data/services/medida_service.dart';
 import '../../data/models/medida_model.dart';
+import '../../data/services/medida_service.dart';
 
 class MedidaProvider extends ChangeNotifier {
-  final MedidaService _medidaService = MedidaService();
-  
+  final MedidaService _service = MedidaService();
+
   List<MedidaModel> _medidas = [];
-  bool _isLoading = false;
-  String? _errorMessage;
-  
   List<MedidaModel> get medidas => _medidas;
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  
-  Future<void> fetchMedidas(int supermercadoId) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-    
+
+  Future<void> fetchMedidas() async {
     try {
-      _medidas = await _medidaService.getMedidasBySupermercado(supermercadoId);
-      _isLoading = false;
+      print("DEBUG: Cargando medidas...");
+      _medidas = await _service.getMedidas();
+      print("DEBUG: Medidas cargadas: $_medidas");
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
+      print("Error al cargar medidas: $e");
     }
   }
-  
-  Future<bool> createMedida(MedidaModel medida) async {
+
+  Future<bool> addMedida(MedidaModel medida) async {
     try {
-      final newMedida = await _medidaService.createMedida(medida);
-      _medidas.add(newMedida);
+      final nueva = await _service.createMedida(medida);
+      _medidas.add(nueva);
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
+      print("Error al agregar medida: $e");
       return false;
     }
   }
-  
-  Future<bool> updateMedida(int id, MedidaModel medida) async {
+
+  Future<bool> updateMedida(MedidaModel medida) async {
     try {
-      final updatedMedida = await _medidaService.updateMedida(id, medida);
-      final index = _medidas.indexWhere((m) => m.id == id);
+      final updated = await _service.updateMedida(medida.id!, medida);
+      final index = _medidas.indexWhere((m) => m.id == medida.id);
+
       if (index != -1) {
-        _medidas[index] = updatedMedida;
+        _medidas[index] = updated;
         notifyListeners();
       }
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
+      print("Error al actualizar medida: $e");
       return false;
     }
   }
-  
+
   Future<bool> deleteMedida(int id) async {
     try {
-      await _medidaService.deleteMedida(id);
+      await _service.deleteMedida(id);
       _medidas.removeWhere((m) => m.id == id);
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
+      print("Error al eliminar medida: $e");
       return false;
     }
   }

@@ -37,41 +37,40 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
   int? _medidaId;
   int? _provedorId;
   bool _isLoading = false;
+@override
+void initState() {
+  super.initState();
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.producto != null) {
-      _nombreController.text = widget.producto!.nombre;
-      _precioController.text = widget.producto!.precio.toString();
-      _stockController.text = widget.producto!.stock.toString();
-      _codigoBarraController.text = widget.producto!.codigoBarra;
-      _categoriaId = widget.producto!.categoriaId;
-      _marcaId = widget.producto!.marcaId;
-      _medidaId = widget.producto!.medidaId;
-      _provedorId = widget.producto!.provedorId;
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = context.read<AuthProvider>();
-      final supermercadoId = authProvider.authResponse?.administrador.supermercadoId;
-      if (supermercadoId != null) {
-        context.read<CategoriaProvider>().fetchCategorias(supermercadoId);
-        context.read<ProveedorProvider>().fetchProveedores(supermercadoId);
-        context.read<MarcaProvider>().fetchMarcas(supermercadoId);
-        context.read<MedidaProvider>().fetchMedidas(supermercadoId);
-      }
-    });
+  // ===== Cargar datos del producto si estamos editando =====
+  final p = widget.producto;
+  if (p != null) {
+    _nombreController.text = p.nombre;
+    _precioController.text = p.precio.toString();
+    _stockController.text = p.stock.toString();
+    _codigoBarraController.text = p.codigoBarra;
+    _categoriaId = p.categoriaId;
+    _marcaId = p.marcaId;
+    _medidaId = p.medidaId;
+    _provedorId = p.provedorId;
   }
 
-  @override
-  void dispose() {
-    _nombreController.dispose();
-    _precioController.dispose();
-    _stockController.dispose();
-    _codigoBarraController.dispose();
-    super.dispose();
+  // ===== Cargar listas del backend después del primer frame =====
+ WidgetsBinding.instance.addPostFrameCallback((_) {
+  final auth = context.read<AuthProvider>().authResponse;
+  final supermercadoId = auth?.administrador.supermercadoId;
+
+  // 🟦 Medidas NO requieren supermercado
+  context.read<MedidaProvider>().fetchMedidas();
+
+  // 🟩 Categorías, Proveedores y Marcas SÍ necesitan supermercado
+  if (supermercadoId != null) {
+    context.read<CategoriaProvider>().fetchCategorias(supermercadoId);
+    context.read<ProveedorProvider>().fetchProveedores(supermercadoId);
+    context.read<MarcaProvider>().fetchMarcas(supermercadoId);
   }
+});
+
+}
 
   Future<void> _showCreateMarcaDialog() async {
     final nombreController = TextEditingController();
@@ -161,10 +160,10 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
                 if (supermercadoId != null) {
                   final medida = MedidaModel(
                     unidad: unidadController.text.trim(),
-                    supermercadoId: supermercadoId,
+
                   );
                   
-                  final success = await context.read<MedidaProvider>().createMedida(medida);
+                  final success = await context.read<MedidaProvider>().addMedida(medida);
                   if (success && mounted) {
                     Navigator.pop(context, true);
                   }
@@ -313,7 +312,7 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
                     children: [
                       Expanded(
                         child: CustomDropdown<int>(
-                          label: 'Marca',
+                          label: 'Marcas',
                           value: _marcaId,
                           items: marcaProvider.marcas.map((marca) {
                             return DropdownMenuItem(
@@ -342,40 +341,44 @@ class _ProductoFormScreenState extends State<ProductoFormScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              Consumer<MedidaProvider>(
-                builder: (context, medidaProvider, _) {
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: CustomDropdown<int>(
-                          label: 'Unidad de Medida',
-                          value: _medidaId,
-                          items: medidaProvider.medidas.map((medida) {
-                            return DropdownMenuItem(
-                              value: medida.id,
-                              child: Text(medida.unidad),
-                            );
-                          }).toList(),
-                          onChanged: (value) => setState(() => _medidaId = value),
-                          validator: (value) => value == null ? 'Selecciona una medida' : null,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: IconButton(
-                          onPressed: _showCreateMedidaDialog,
-                          icon: const Icon(Icons.add, color: Colors.white),
-                          tooltip: 'Nueva Medida',
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+Consumer<MedidaProvider>(
+  builder: (context, medidaProvider, _) {
+    final medidas = medidaProvider.medidas;
+
+    // 🔍 DEBUG EN CONSOLA
+    print("🔍 DEBUG MedidasProvider:");
+    print("   - Cantidad: ${medidas.length}");
+    for (var m in medidas) {
+      print("   - Medida => ID: ${m.id}, Unidad: ${m.unidad}");
+    }
+
+    // 🔥 DEBUG EN PANTALLA
+    if (medidas.isEmpty) {
+      return const Text(
+        "⚠ No hay medidas cargadas",
+        style: TextStyle(color: Colors.red),
+      );
+    }
+
+    return CustomDropdown<int>(
+      label: 'Unidad de Medida',
+      value: _medidaId,
+      items: medidas.map((m) {
+        return DropdownMenuItem(
+          value: m.id,
+          child: Text(m.unidad),
+        );
+      }).toList(),
+      onChanged: (value) => setState(() => _medidaId = value),
+      validator: (value) =>
+          value == null ? 'Selecciona una medida' : null,
+    );
+  },
+),
+
+
+
+
               const SizedBox(height: 16),
               Consumer<ProveedorProvider>(
                 builder: (context, proveedorProvider, _) {
